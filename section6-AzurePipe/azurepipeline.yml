@@ -1,0 +1,89 @@
+#in this code we will create a pipeline that will run the following steps:
+#1. Clone Repository
+#2. Install dependencies
+#3. Run Flake8 Linting
+#4. Run Bandit Security Scan
+#5. Build Docker Image and Push to ACR
+
+trigger:
+  - main
+
+pool:
+  vmImage: "ubuntu-latest"
+
+variables:
+  # ACR details
+  acrLoginServer: "tomerfortest.azurecr.io"
+  imageName: "tomer-image"
+  imageTag: "45"
+  containerRegistryServiceConnection: "TomerARG" # connection name to Azure Container Registry
+
+steps:
+  # 1. Clone Repository
+  - checkout: self
+
+  # 2. Install dependencies
+  - script: |
+      python -m pip install --upgrade pip
+      pip install -r requirements.txt
+    displayName: "Install dependencies"
+
+  # 3. Run Hadolint for Dockerfile linting
+  - script: |
+      curl -sSL https://github.com/hadolint/hadolint/releases/download/v2.7.0/hadolint-Linux-x86_64 -o /usr/local/bin/hadolint
+      chmod +x /usr/local/bin/hadolint
+      hadolint Dockerfile || exit 0
+    displayName: "Run Hadolint Linting for Dockerfile"
+
+  # 4. Install Trivy Security Scanner
+  - script: |
+      curl -sfL https://github.com/aquasecurity/trivy/releases/download/v0.29.0/trivy_0.29.0_Linux-64bit.deb -o trivy.deb
+      sudo dpkg -i trivy.deb
+      sudo apt-get update
+      sudo apt-get install -y trivy
+    displayName: "Install Trivy Security Scanner"
+
+  # 5. Login to Azure Container Registry (ACR)
+  - task: Docker@2
+    displayName: "Login to Azure Container Registry"
+    inputs:
+      command: "login"
+      containerRegistry: "$(containerRegistryServiceConnection)"
+
+  # 6. Run Trivy Security Scan on Docker Image
+  - script: |
+      docker pull $(acrLoginServer)/$(imageName):$(imageTag) 
+      trivy image --severity HIGH,CRITICAL --no-progress $(acrLoginServer)/$(imageName):$(imageTag) || exit 0  # סריקה על התמונה
+    displayName: "Run Trivy Security Scan on Docker Image"
+
+  # 7. Run Flake8 Linting
+  - script: |
+      flake8 . || exit 0
+    displayName: "Run Flake8 Linting"
+
+  # 8. Run Bandit Security Scan
+  - script: |
+      bandit -r . || exit 0
+    displayName: "Run Bandit Security Scan"
+
+  # 9. Build Docker Image and Push to ACR
+  - task: Docker@2
+    displayName: "Build and Push Docker Image"
+    inputs:
+      containerRegistry: "$(containerRegistryServiceConnection)"
+      repository: "$(imageName)"
+      command: "buildAndPush"
+      Dockerfile: "**/Dockerfile"
+      tags: |
+        $(imageTag)
+        latest
+
+# for this project you have to create a service connection to the Azure Container Registry (ACR) in Azure DevOps.
+# The service connection name should be TomerARG
+# The service connection should be created with the following details:
+# Subscription: Azure Pass
+# Resource Group: TomerARG
+# Registry Name: tomerfortest
+# The service connection should be created with the following details:
+# the folder of the repo should be in the root of the repo
+# and the tree should be like this
