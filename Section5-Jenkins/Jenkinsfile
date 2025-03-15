@@ -1,0 +1,118 @@
+pipeline {
+    agent any
+    environment {
+        DOCKERHUB_CREDENTIALS = credentials('custom-creds')
+        DOCKER_REGISTRY = 'tomertest123'
+        REPO_NAME = 'fe-exam'  // Change to 'be-exam' for backend pipeline
+        IMAGE_TAG = "${env.BUILD_NUMBER}"
+    }
+    stages {
+        stage('Clone Repository') {
+            steps {
+                git branch: '', url: ''
+            }
+        }
+        stage('Lint & Security Scan') {
+            parallel {
+                stage('Flake8 Linting') {
+                    steps {
+                        sh 'flake8 . || true'
+                    }
+                }
+                stage('ShellCheck for Shell Scripts') {
+                    steps {
+                        sh 'find . -name "*.sh" -print0 | xargs -0 shellcheck || true'
+                    }
+                }
+                stage('Hadolint for Dockerfiles') {
+                    steps {
+                        sh 'hadolint Dockerfile || true'
+                    }
+                }
+                stage('Bandit Security Scan') {
+                    steps {
+                        sh 'bandit -r . || true'
+                    }
+                }
+                stage('Trivy Security Scan for Docker') {
+                    steps {
+                        sh 'trivy image ${DOCKER_REGISTRY}/${REPO_NAME}:${IMAGE_TAG} || true'
+                    }
+                }
+            }
+        }
+        stage('Install Dependencies') {
+            steps {
+                script {
+                    if (env.REPO_NAME == 'fe-exam') {
+                        dir('') {
+                            sh 'pwd'
+                            sh 'pip install -r requirements.txt'
+                        }
+                    } else {
+                        dir('exam-code/docker/be') {
+                            sh 'pwd'
+                            sh 'pip install -r requirements.txt'
+                        }
+                    }
+                }
+            }
+        }
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    if (env.REPO_NAME == 'fe-exam') {
+                        dir('exam-code/docker/fe') {
+                            sh 'docker build -t ${DOCKER_REGISTRY}/${REPO_NAME}:${IMAGE_TAG} .'
+                            sh 'docker tag ${DOCKER_REGISTRY}/${REPO_NAME}:${IMAGE_TAG} ${DOCKER_REGISTRY}/${REPO_NAME}:latest'
+                        }
+                    } else {
+                        dir('exam-code/docker/be') {
+                            sh 'docker build -t ${DOCKER_REGISTRY}/${REPO_NAME}:${IMAGE_TAG} .'
+                            sh 'docker tag ${DOCKER_REGISTRY}/${REPO_NAME}:${IMAGE_TAG} ${DOCKER_REGISTRY}/${REPO_NAME}:latest'
+                        }
+                    }
+                }
+            }
+        }
+        stage('Run Tests in Container') {
+            steps {
+                sh 'docker images'
+                sh 'docker run --rm ${DOCKER_REGISTRY}/${REPO_NAME}:${BUILD_NUMBER} pytest tests/'
+            }
+        }
+        stage('Install Docker Compose') {
+            steps {
+                script {
+                    sh '''
+                    if ! command -v docker-compose &> /dev/null
+                    then
+                        echo "Docker Compose could not be found, installing..."
+                        sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+                        sudo chmod +x /usr/local/bin/docker-compose
+                    else
+                        echo "Docker Compose is already installed."
+                    fi
+                    '''
+                }
+            }
+        }
+        stage('Integration Test with Docker Compose') {
+            steps {
+                sh 'docker-compose up -d'
+                sh 'sleep 10'
+                sh 'curl -f http://localhost:5002 || exit 1 || true'
+                sh 'docker-compose down'
+            }
+        }
+        stage('Push to Docker Hub') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', usernameVariable: 'DOCKERHUB_CREDENTIALS_USR', passwordVariable: 'DOCKERHUB_CREDENTIALS_PSW')]) {
+                    sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
+                    sh 'docker push ${DOCKER_REGISTRY}/${REPO_NAME}:${IMAGE_TAG}'
+                    sh 'docker push ${DOCKER_REGISTRY}/${REPO_NAME}:latest'
+                }
+            }
+        }
+    }
+}
