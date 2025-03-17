@@ -1,5 +1,5 @@
 output "tomer_ssh_command" {
-  value = "ssh -i tomer-key.pem ubuntu@${aws_instance.vm.public_ip}"
+  value = "ssh -i tomer-key3.pem ubuntu@${aws_instance.vm.public_ip}"
 }
 output "ec2_public_ip" {
   description = "The public IP of the EC2 instance for verification"

@@ -1,6 +1,6 @@
 resource "aws_security_group" "tomer_sg" {
   vpc_id      = data.aws_vpc.selected.id
-  name        = "tomer-sg"
+  name        = "tomer-sg2"
   description = "Allow SSH and Docker Compose traffic"
 
   ingress {
