@@ -19,11 +19,6 @@ pipeline {
                         sh 'flake8 . || true'
                     }
                 }
-                stage('ShellCheck for Shell Scripts') {
-                    steps {
-                        sh 'find . -name "*.sh" -print0 | xargs -0 shellcheck || true'
-                    }
-                }
                 stage('Hadolint for Dockerfiles') {
                     steps {
                         sh 'hadolint Dockerfile || true'
