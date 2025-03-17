@@ -1,15 +1,15 @@
 pipeline {
     agent any
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('custom-creds')
+        DOCKERHUB_CREDENTIALS = credentials('dockercred')
         DOCKER_REGISTRY = 'tomertest123'
-        REPO_NAME = 'fe-exam'  // Change to 'be-exam' for backend pipeline
+        REPO_NAME = 'finalexam'  // Change to 'be-exam' for backend pipeline
         IMAGE_TAG = "${env.BUILD_NUMBER}"
     }
     stages {
         stage('Clone Repository') {
             steps {
-                git branch: '', url: ''
+                git branch: 'feature/debug-python-bug', url: 'https://github.com/tomerk122/DevopsFinalExam.git'
             }
         }
         stage('Lint & Security Scan') {
@@ -44,34 +44,21 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 script {
-                    if (env.REPO_NAME == 'fe-exam') {
-                        dir('') {
-                            sh 'pwd'
-                            sh 'pip install -r requirements.txt'
-                        }
-                    } else {
-                        dir('exam-code/docker/be') {
-                            sh 'pwd'
-                            sh 'pip install -r requirements.txt'
-                        }
-                    }
+
+                    sh 'pwd'
+                    sh 'pip install -r requirements.txt'
+                    
                 }
             }
         }
         stage('Build Docker Image') {
             steps {
                 script {
-                    if (env.REPO_NAME == 'fe-exam') {
-                        dir('exam-code/docker/fe') {
-                            sh 'docker build -t ${DOCKER_REGISTRY}/${REPO_NAME}:${IMAGE_TAG} .'
-                            sh 'docker tag ${DOCKER_REGISTRY}/${REPO_NAME}:${IMAGE_TAG} ${DOCKER_REGISTRY}/${REPO_NAME}:latest'
-                        }
-                    } else {
-                        dir('exam-code/docker/be') {
-                            sh 'docker build -t ${DOCKER_REGISTRY}/${REPO_NAME}:${IMAGE_TAG} .'
-                            sh 'docker tag ${DOCKER_REGISTRY}/${REPO_NAME}:${IMAGE_TAG} ${DOCKER_REGISTRY}/${REPO_NAME}:latest'
-                        }
-                    }
+
+                       
+                sh 'docker build -t ${DOCKER_REGISTRY}/${REPO_NAME}:${IMAGE_TAG} .'
+                sh 'docker tag ${DOCKER_REGISTRY}/${REPO_NAME}:${IMAGE_TAG} ${DOCKER_REGISTRY}/${REPO_NAME}:latest'
+                       
                 }
             }
         }
