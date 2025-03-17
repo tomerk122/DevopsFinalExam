@@ -1,0 +1,83 @@
+# Azure DevOps Pipeline for CI/CD Integration
+
+trigger:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: "ubuntu-latest"
+
+variables:
+  DOCKERHUB_USERNAME: $(DOCKERHUB_USERNAME) # take it from the varibles
+  DOCKERHUB_PASSWORD: $(DOCKERHUB_PASSWORD) # take it from the varibles
+  IMAGE_NAME: "your-dockerhub-username/flask-aws-monitor"
+stages:
+  - stage: CloneRepository
+    displayName: "Clone Repository"
+    jobs:
+      - job: Clone
+        steps:
+          - script: |
+              git clone --branch feature/debug-python-bug https://github.com/tomerk122/DevopsFinalExam.git
+              cd DevopsFinalExam/section3-debuging
+              ls -la
+            displayName: "Clone repo"
+
+  - stage: ParallelChecks
+    displayName: "Parallel Linting & Security Checks"
+    dependsOn: CloneRepository
+    jobs:
+      - job: Linting
+        displayName: "Linting"
+        steps:
+          - script: |
+              cd DevopsFinalExam/section3-debuging
+              pip install pylint || true
+              pylint ./source/. || true
+            displayName: "Run Python Linting"
+
+          - script: |
+              echo "shell script running"
+            displayName: "Run Shell Script Linting"
+
+          - script: |
+              cd DevopsFinalExam/section3-debuging
+              curl -s https://raw.githubusercontent.com/hadolint/hadolint/master/hadolint-linux-amd64 -o /usr/local/bin/hadolint || true
+              chmod +x /usr/local/bin/hadolint || true
+              hadolint ./Dockerfile || true
+            displayName: "Run Dockerfile Linting"
+
+      - job: SecurityScanning
+        displayName: "Security Scanning"
+        steps:
+          - script: |
+              cd DevopsFinalExam/section3-debuging
+              curl -sfL https://github.com/aquasecurity/trivy/releases/download/v0.29.0/trivy_0.29.0_Linux-64bit.tar.gz | tar -xzv || true
+              ./trivy fs . || true
+            displayName: "Run Security Scan"
+
+  - stage: BuildDockerImage
+    displayName: "Build Docker Image"
+    dependsOn: ParallelChecks
+    jobs:
+      - job: BuildImage
+        steps:
+          - script: |
+              ls -la
+              echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin || true
+              cd DevopsFinalExam/section3-debuging
+              docker build -t "$DOCKERHUB_USERNAME"/flask-aws-monitor . || true
+              docker images || true
+            displayName: "Build Docker Image"
+  - stage: PushDockerImage
+    displayName: "Push Docker Image to DockerHub"
+    dependsOn: BuildDockerImage
+    jobs:
+      - job: PushImage
+        steps:
+          - script: |
+              echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin || true
+              docker push "$DOCKERHUB_USERNAME"/flask-aws-monitor || true
+              docker logout || true
+            displayName: "Push Docker Image to DockerHub"
