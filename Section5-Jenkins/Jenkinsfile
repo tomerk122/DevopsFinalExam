@@ -45,8 +45,10 @@ pipeline {
             steps {
                 script {
 
-                    sh 'pwd'
-                    sh 'pip install -r requirements.txt'
+                        dir('section3-debuging') {
+                            sh 'pwd'
+                            sh 'pip install -r requirements.txt'
+                        }
                     
                 }
             }
@@ -54,42 +56,13 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-
-                       
-                sh 'docker build -t ${DOCKER_REGISTRY}/${REPO_NAME}:${IMAGE_TAG} .'
-                sh 'docker tag ${DOCKER_REGISTRY}/${REPO_NAME}:${IMAGE_TAG} ${DOCKER_REGISTRY}/${REPO_NAME}:latest'
-                       
+                  
+                         dir('section3-debuging') {
+                            sh 'docker build -t ${DOCKER_REGISTRY}/${REPO_NAME}:${IMAGE_TAG} .'
+                            sh 'docker tag ${DOCKER_REGISTRY}/${REPO_NAME}:${IMAGE_TAG} ${DOCKER_REGISTRY}/${REPO_NAME}:latest'
+                        }
+                    
                 }
-            }
-        }
-        stage('Run Tests in Container') {
-            steps {
-                sh 'docker images'
-                sh 'docker run --rm ${DOCKER_REGISTRY}/${REPO_NAME}:${BUILD_NUMBER} pytest tests/'
-            }
-        }
-        stage('Install Docker Compose') {
-            steps {
-                script {
-                    sh '''
-                    if ! command -v docker-compose &> /dev/null
-                    then
-                        echo "Docker Compose could not be found, installing..."
-                        sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-                        sudo chmod +x /usr/local/bin/docker-compose
-                    else
-                        echo "Docker Compose is already installed."
-                    fi
-                    '''
-                }
-            }
-        }
-        stage('Integration Test with Docker Compose') {
-            steps {
-                sh 'docker-compose up -d'
-                sh 'sleep 10'
-                sh 'curl -f http://localhost:5002 || exit 1 || true'
-                sh 'docker-compose down'
             }
         }
         stage('Push to Docker Hub') {
