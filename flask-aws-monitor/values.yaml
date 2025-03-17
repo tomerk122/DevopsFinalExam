@@ -1,0 +1,12 @@
+replicaCount: 3
+appName: finalexam
+image:
+  repository: tomertest123/appwithoutbug
+  tag: latest
+containerPort: 5001
+
+labels:
+  app: finalexam
+
+service:
+  type: LoadBalancer
