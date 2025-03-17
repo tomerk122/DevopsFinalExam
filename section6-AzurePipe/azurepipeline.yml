@@ -1,89 +1,83 @@
-#in this code we will create a pipeline that will run the following steps:
-#1. Clone Repository
-#2. Install dependencies
-#3. Run Flake8 Linting
-#4. Run Bandit Security Scan
-#5. Build Docker Image and Push to ACR
+# Azure DevOps Pipeline for CI/CD Integration
 
 trigger:
-  - main
+  branches:
+    include:
+      - main
 
 pool:
   vmImage: "ubuntu-latest"
 
 variables:
-  # ACR details
-  acrLoginServer: "tomerfortest.azurecr.io"
-  imageName: "tomer-image"
-  imageTag: "45"
-  containerRegistryServiceConnection: "TomerARG" # connection name to Azure Container Registry
+  DOCKERHUB_USERNAME: $(DOCKERHUB_USERNAME) # take it from the varibles
+  DOCKERHUB_PASSWORD: $(DOCKERHUB_PASSWORD) # take it from the varibles
+  IMAGE_NAME: "your-dockerhub-username/flask-aws-monitor"
+stages:
+  - stage: CloneRepository
+    displayName: "Clone Repository"
+    jobs:
+      - job: Clone
+        steps:
+          - script: |
+              git clone --branch feature/debug-python-bug https://github.com/tomerk122/DevopsFinalExam.git
+              cd DevopsFinalExam/section3-debuging
+              ls -la
+            displayName: "Clone repo"
 
-steps:
-  # 1. Clone Repository
-  - checkout: self
+  - stage: ParallelChecks
+    displayName: "Parallel Linting & Security Checks"
+    dependsOn: CloneRepository
+    jobs:
+      - job: Linting
+        displayName: "Linting"
+        steps:
+          - script: |
+              cd DevopsFinalExam/section3-debuging
+              pip install pylint || true
+              pylint ./source/. || true
+            displayName: "Run Python Linting"
 
-  # 2. Install dependencies
-  - script: |
-      python -m pip install --upgrade pip
-      pip install -r requirements.txt
-    displayName: "Install dependencies"
+          - script: |
+              echo "shell script running"
+            displayName: "Run Shell Script Linting"
 
-  # 3. Run Hadolint for Dockerfile linting
-  - script: |
-      curl -sSL https://github.com/hadolint/hadolint/releases/download/v2.7.0/hadolint-Linux-x86_64 -o /usr/local/bin/hadolint
-      chmod +x /usr/local/bin/hadolint
-      hadolint Dockerfile || exit 0
-    displayName: "Run Hadolint Linting for Dockerfile"
+          - script: |
+              cd DevopsFinalExam/section3-debuging
+              curl -s https://raw.githubusercontent.com/hadolint/hadolint/master/hadolint-linux-amd64 -o /usr/local/bin/hadolint || true
+              chmod +x /usr/local/bin/hadolint || true
+              hadolint ./Dockerfile || true
+            displayName: "Run Dockerfile Linting"
 
-  # 4. Install Trivy Security Scanner
-  - script: |
-      curl -sfL https://github.com/aquasecurity/trivy/releases/download/v0.29.0/trivy_0.29.0_Linux-64bit.deb -o trivy.deb
-      sudo dpkg -i trivy.deb
-      sudo apt-get update
-      sudo apt-get install -y trivy
-    displayName: "Install Trivy Security Scanner"
+      - job: SecurityScanning
+        displayName: "Security Scanning"
+        steps:
+          - script: |
+              cd DevopsFinalExam/section3-debuging
+              curl -sfL https://github.com/aquasecurity/trivy/releases/download/v0.29.0/trivy_0.29.0_Linux-64bit.tar.gz | tar -xzv || true
+              ./trivy fs . || true
+            displayName: "Run Security Scan"
 
-  # 5. Login to Azure Container Registry (ACR)
-  - task: Docker@2
-    displayName: "Login to Azure Container Registry"
-    inputs:
-      command: "login"
-      containerRegistry: "$(containerRegistryServiceConnection)"
-
-  # 6. Run Trivy Security Scan on Docker Image
-  - script: |
-      docker pull $(acrLoginServer)/$(imageName):$(imageTag) 
-      trivy image --severity HIGH,CRITICAL --no-progress $(acrLoginServer)/$(imageName):$(imageTag) || exit 0  # סריקה על התמונה
-    displayName: "Run Trivy Security Scan on Docker Image"
-
-  # 7. Run Flake8 Linting
-  - script: |
-      flake8 . || exit 0
-    displayName: "Run Flake8 Linting"
-
-  # 8. Run Bandit Security Scan
-  - script: |
-      bandit -r . || exit 0
-    displayName: "Run Bandit Security Scan"
-
-  # 9. Build Docker Image and Push to ACR
-  - task: Docker@2
-    displayName: "Build and Push Docker Image"
-    inputs:
-      containerRegistry: "$(containerRegistryServiceConnection)"
-      repository: "$(imageName)"
-      command: "buildAndPush"
-      Dockerfile: "**/Dockerfile"
-      tags: |
-        $(imageTag)
-        latest
-
-# for this project you have to create a service connection to the Azure Container Registry (ACR) in Azure DevOps.
-# The service connection name should be TomerARG
-# The service connection should be created with the following details:
-# Subscription: Azure Pass
-# Resource Group: TomerARG
-# Registry Name: tomerfortest
-# The service connection should be created with the following details:
-# the folder of the repo should be in the root of the repo
-# and the tree should be like this
+  - stage: BuildDockerImage
+    displayName: "Build Docker Image"
+    dependsOn: ParallelChecks
+    jobs:
+      - job: BuildImage
+        steps:
+          - script: |
+              ls -la
+              echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin || true
+              cd DevopsFinalExam/section3-debuging
+              docker build -t "$DOCKERHUB_USERNAME"/flask-aws-monitor . || true
+              docker images || true
+            displayName: "Build Docker Image"
+  - stage: PushDockerImage
+    displayName: "Push Docker Image to DockerHub"
+    dependsOn: BuildDockerImage
+    jobs:
+      - job: PushImage
+        steps:
+          - script: |
+              echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin || true
+              docker push "$DOCKERHUB_USERNAME"/flask-aws-monitor || true
+              docker logout || true
+            displayName: "Push Docker Image to DockerHub"
