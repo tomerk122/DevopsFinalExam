@@ -1,0 +1,14 @@
+the EC2 that we created : [image](https://private-user-images.githubusercontent.com/200071279/423509298-3b062b73-ad21-4aa5-9c1c-2f22c8627861.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NDIyMjE2NTEsIm5iZiI6MTc0MjIyMTM1MSwicGF0aCI6Ii8yMDAwNzEyNzkvNDIzNTA5Mjk4LTNiMDYyYjczLWFkMjEtNGFhNS05YzFjLTJmMjJjODYyNzg2MS5wbmc_WC1BbXotQWxnb3JpdGhtPUFXUzQtSE1BQy1TSEEyNTYmWC1BbXotQ3JlZGVudGlhbD1BS0lBVkNPRFlMU0E1M1BRSzRaQSUyRjIwMjUwMzE3JTJGdXMtZWFzdC0xJTJGczMlMkZhd3M0X3JlcXVlc3QmWC1BbXotRGF0ZT0yMDI1MDMxN1QxNDIyMzFaJlgtQW16LUV4cGlyZXM9MzAwJlgtQW16LVNpZ25hdHVyZT1mNDU2NmViZDAyMDgxYzgzYjI5ZTc0ZDM1ZGE0NTcwNGVlNmU0MzgyN2NkMGM5MTE2NGNmYTFkYzA5Mjc0NTBjJlgtQW16LVNpZ25lZEhlYWRlcnM9aG9zdCJ9.KRPVJuQ_qg56GNVqcXP2uj8befb9UfjfXaqEhrr8yDA)
+
+in this section we are downlding with a script the DOCKER COMPOSE after dowloading ( i did that with remote-exec so after doing that checking: image
+![image](https://github.com/user-attachments/assets/4a53c782-e271-45a9-9c5a-f5c90e120fd7)
+
+for running the proejct first apply terraform init,
+
+then
+
+terraform plan
+
+then
+
+terraform apply.
