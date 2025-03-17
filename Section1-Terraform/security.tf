@@ -1,5 +1,5 @@
 resource "aws_security_group" "tomer_sg" {
-  vpc_id      = aws_vpc.custom_vpc.id
+  vpc_id      = data.aws_vpc.selected.id
   name        = "tomer-sg"
   description = "Allow SSH and Docker Compose traffic"
 
@@ -9,6 +9,14 @@ resource "aws_security_group" "tomer_sg" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
+  # for the jenkins file
+  ingress {
+    from_port   = 8080
+    to_port     = 8080
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
 
   ingress {
     from_port   = 5001
