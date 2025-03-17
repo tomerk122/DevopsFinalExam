@@ -13,7 +13,7 @@ ENV AWS_SECRET_ACCESS_KEY=IwrlmVWb4I6FTWorvqu+4qF5M9jIyqndbXfgb3HX
 ENV AWS_DEFAULT_REGION=us-east-1
 WORKDIR /app
 COPY --from=build /app/requirements.txt /app/requirements.txt
-COPY source /app/sourcels
+COPY source /app/source
 EXPOSE 5001
 CMD ["python", "source/app.py"]
 
