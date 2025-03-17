@@ -1,0 +1,37 @@
+---
+# Source: flask-aws-monitor/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: finalexam-service
+spec:
+  selector:
+    app: finalexam
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 5001
+  type: LoadBalancer # if we dont have service type we wl take the default
+---
+# Source: flask-aws-monitor/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: finalexam-deployment
+  labels:
+    app: finalexam
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: finalexam
+  template:
+    metadata:
+      labels:
+        app: finalexam
+    spec:
+      containers:
+        - name: finalexam
+          image: tomertest123/appwithoutbug:latest
+          ports:
+            - containerPort: 5001
