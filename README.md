@@ -3,3 +3,8 @@ the most importnt thing here to remember that in the docker file the app is on 5
 
 so! 
 Lb (getting port 80) -- > out to the deployments that listeneting to port 5001
+
+
+---
+
+in the helm section we took the values out and put it outside.
