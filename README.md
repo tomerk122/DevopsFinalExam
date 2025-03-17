@@ -19,5 +19,9 @@
    ami_data = [{"AMI ID": ami["ImageId"], "Name": ami.get("Name", "N/A")} for ami in amis["Images"]]
   
 
+now our appllication loads well :
+    ![image](https://github.com/user-attachments/assets/6a8a39dc-8687-4702-a5d2-03a2bc683e9b)
+    we also upload the right image:
+    ![image](https://github.com/user-attachments/assets/980c1b67-9576-4faf-98b9-342d2bd43576)
 
-    
+
