@@ -1,5 +1,15 @@
 # DevopsFinalExam
 
+# in the second build we are copying the dependencies from the first build to the second build
+# if we want to test it localy, we can run those commands:
+# docker build -t my-python-app .
+# docker run -p 5001:5001 my-python-app
+
+our application is not fix yet so we get an error in the section 3, debug we will fix it.
+we  uploaded it so we can use it in the ec2: 
+![image](https://github.com/user-attachments/assets/5060d529-f165-4fb4-a6cd-7f8c05bbd83f)
+
+
  in this pipeline we do some paralizim checks: 
  like Hadolint, Bandit, Trivy
 
@@ -64,6 +74,7 @@ now our appllication loads well :
     ![image](https://github.com/user-attachments/assets/6a8a39dc-8687-4702-a5d2-03a2bc683e9b)
     we also upload the right image:
     ![image](https://github.com/user-attachments/assets/980c1b67-9576-4faf-98b9-342d2bd43576)
+
 
 
 
