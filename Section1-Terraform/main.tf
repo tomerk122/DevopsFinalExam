@@ -18,11 +18,12 @@ resource "tls_private_key" "my_key" {
 
 resource "local_file" "private_key" {
   content         = tls_private_key.my_key.private_key_pem
-  filename        = "tomer-key3.pem"
+  filename        = "/home/tomer/.ssh/tomer-key3.pem"
   file_permission = "0600"
 }
 
+
 resource "aws_key_pair" "aws_key" {
-  key_name   = "aws_key2"
+  key_name   = "aws_key3"
   public_key = tls_private_key.my_key.public_key_openssh
 }
