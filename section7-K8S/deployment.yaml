@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: finalexam-deployment
+  labels:
+    app: finalexam
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: finalexam
+  template:
+    metadata:
+      labels:
+        app: finalexam
+    spec:
+      containers:
+        - name: finalexam
+          image: tomertest123/appwithoutbug
+          ports:
+            - containerPort: 5001
